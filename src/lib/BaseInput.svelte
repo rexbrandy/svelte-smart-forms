@@ -14,7 +14,8 @@
     onChange = () => {},
     onBlur = () => {},
     validationRules = [],
-    children
+    showValidation: boolean,
+    input
   } : {
     label?: string;
     value: any;
@@ -25,7 +26,8 @@
     onChange?: () => void;
     onBlur?: () => void;
     validationRules: ValidationRule[];
-    children: Snippet;
+    showValidation: boolean;
+    input: Snippet;
   } = $props();
 
   const formState: FormState = getFormContext();
@@ -55,6 +57,10 @@
     }
   });
 
+  function handleBlur() {
+    fieldState.blur();
+  }
+
   // add to formState onMount
   onMount(() => {
     if (formState) {
@@ -78,7 +84,7 @@
     </label>
   {/if}
 
-  {@render children()}
+  {@render input()}
 
   <!-- Todo FieldErrors-->
 </div>

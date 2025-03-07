@@ -84,6 +84,18 @@ export function createFormState() {
       this.customRules.forEach((rule) => rule());
 
       return this.valid;
+    },
+
+    reset() {
+      this.valid = true;
+      this.submitted = false;
+      
+      for (const field of Object.values(this.fields)) {
+        field.blurred = false;
+        field.dirty = false;
+        field.valid = false;
+        field.errors = {};
+      }
     }
   })
 
