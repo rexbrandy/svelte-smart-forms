@@ -1,128 +1,84 @@
-<!-- @migration-task Error while migrating Svelte code: This migration would change the name of a slot making the component unusable -->
-<!-- BaseInput.svelte -->
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import FieldErrors from '$lib/FieldErrors.svelte';
-    import type { FormState, FieldState } from './Interfaces';
+	import { onMount, type Snippet } from "svelte";
+  import type { ValidationRule, FieldState } from "./stores/interfaces";
+	import { getFormContext } from "./stores/formContext.svelte";
+  import type { FormState } from "./stores/formContext.svelte";
   
-    export let label = '';
-    export let value: any = null;
-    export let required = false;
-    export let disabled = false;
-    export let classes = 'smart-form-input';
-    export let name = '';
-    export let show_validation = true;
-    export let placeholder = '';
-    export let formState: FormState | null = null;
-    export let on_change: () => void = () => {};
-    export let validation_functions: Array<() => void> = [];
-  
-    let all_changes = () => {};
-  
-    export let fieldState: FieldState = {
-      dirty: false,
-      valid: false,
-      blurred: false,
-      initial_value: null,
-      errors: {},
-      add_error: (error: string, message: string) => {
-        fieldState.valid = false;
-        fieldState.errors[error] = message;
-      },
-      remove_error: (error: string) => {
-        delete fieldState.errors[error];
-  
-        if (Object.keys(fieldState.errors).length === 0) {
-          fieldState.valid = true;
-        }
-      },
-      blur: () => {
-        fieldState.blurred = true;
-      },
-    };
-  
-    function validate(value: any) {
-      if (!$formState) {
-        return;
+  let {
+    label = '',
+    value = $bindable(),
+    name,
+    required = false,
+    disabled = false,
+    class: className = '',
+    onChange = () => {},
+    onBlur = () => {},
+    validationRules = [],
+    children
+  } : {
+    label?: string;
+    value: any;
+    name: string;
+    required?: boolean;
+    disabled?: boolean;
+    class?: string;
+    onChange?: () => void;
+    onBlur?: () => void;
+    validationRules: ValidationRule[];
+    children: Snippet;
+  } = $props();
+
+  const formState: FormState = getFormContext();
+
+  // Set up field state
+  let fieldState = $state<FieldState>({
+    dirty: false,
+    valid: true,
+    blurred: false,
+    initial_value: null,
+    errors: {},
+    
+    add_error: (error: string, message: string) => {
+      fieldState.valid = false;
+      fieldState.errors[error] = message;
+    },
+    
+    remove_error: (error: string) => {
+      delete fieldState.errors[error];
+      if (Object.keys(fieldState.errors).length === 0) {
+        fieldState.valid = true;
       }
-
-      // Reset the field formState
-      fieldState.errors = {};
-      fieldState.valid = true;
-
-      // Check if the field is required
-      if (required && (value === null || value === '' || value === false)) {
-        fieldState.add_error('required', 'This is required');
-      }
-
-      // Run any validation passed from the level above
-      validation_functions.forEach((fn) => {
-        fn();
-      });
-
-      // update the form error state
-      if (fieldState.valid)  {
-        delete $formState.errors[name];
-      } else {
-        $formState.errors[name] = fieldState.errors;
-        $formState.valid = false; // Added by Bailey - if field has an error then form is invalid
-      }
-
-
-      $formState.fields[name] = fieldState;
+    },
+    
+    blur: () => {
+      fieldState.blurred = true;
     }
+  });
 
-  
-    $: {
-      validate(value);
-    }
-  
-    $: {
-      fieldState.dirty = value === fieldState.initial_value;
-    }
-  
-    onMount(async () => {
-      if ($formState) {
-        fieldState.initial_value = value;
-        $formState.fields[name] = fieldState;
+  // add to formState onMount
+  onMount(() => {
+    if (formState) {
+      formState.addField(name, fieldState);
+      return () => {
+        formState.removeField(name);
       }
-  
-      all_changes = () => {
-        on_change();
-      };
-    });
-  </script>
-  
-  <div class={classes}>
-  <slot name="label">
-    {#if label != ''}
-      <label for="{name}" class="smart-form-input-label">{label}{#if required}<span style="color: #ce0262">*</span>{/if}</label>
-    {/if}
-  </slot>
+    }
+  })
 
-  <slot name="input">
-    <input
-      on:keyup={all_changes}
-      on:blur={() => {fieldState.blur();}}
-      required={required}
-      disabled="{disabled}"
-      placeholder="{placeholder}"
-      type='text'
-      name={name}
-      bind:value={value}
-    />
-  </slot>
+  // Track if field is dirty
+  $effect(() => {
+    fieldState.dirty = value !== fieldState.initial_value;
+  })
+</script>
 
-  <slot name="errors">
-    {#if show_validation }
-      <FieldErrors
-        formState={formState}
-        field={name}
-      ></FieldErrors>
-    {/if}
-  </slot>
+<div class={className + ' form-field'}>
+  {#if label}
+    <label for={name} class="form-label">
+      {label}{#if required}<span class="required-mark">*</span>{/if}
+    </label>
+  {/if}
+
+  {@render children()}
+
+  <!-- Todo FieldErrors-->
 </div>
-
-<style></style>
-
-  

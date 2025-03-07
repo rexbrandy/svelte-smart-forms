@@ -1,62 +1,48 @@
 <script lang="ts">
-  import { run, preventDefault } from 'svelte/legacy';
+	import type { Snippet } from "svelte";
+  import { setFormContext } from "./stores/formContext.svelte";
+	import type { FormState } from "./stores/formContext.svelte";
 
-    import type { FormState } from './Interfaces';
-    
-  
-  interface Props {
-    //import { toast_error } from '../lib/toast_themes';
-    formState?: FormState | null;
-    onSubmit?: (() => void) | null;
-    children?: import('svelte').Snippet;
+  let { 
+    formState,
+    onSubmit = () => {},
+    id = null,
+    action = null,
+    children
+  } : {
+    formState: FormState;
+    onSubmit: () => void;
+    id?: string | null;
+    action?: string | null;
+    children: Snippet;
+  } = $props();
+
+  setFormContext(formState);
+
+  $effect(() => {
+    formState.validate();
+
+    // This create a dependency on the formstate fields
+    Object.keys(formState.fields);
+  })
+
+  function handleSubmit(event: Event) {
+    event.preventDefault();
+
+    formState.submitted = true;
+
+    if (!onSubmit) {
+      return;
+    }
+
+    if (!formState.valid) {
+      return;
+    }
+
+    onSubmit();
   }
+</script>
 
-  let { formState = null, onSubmit = null, children }: Props = $props();
-  
-    const validate = () => {
-      if (!$formState) return;
-  
-      $formState.valid = true;
-  
-      for (const [, field] of Object.entries($formState.fields)) {
-        if (!field.valid) {
-          $formState.valid = false;
-        }
-      }
-  
-      $formState.customRules.forEach((rule) => {
-        rule();
-      });
-    };
-  
-    const submitHandler = (event: Event) => {
-      event.preventDefault();
-  
-      if (!$formState) return;
-  
-      $formState.submitted = true;
-      if (!onSubmit) {
-        return;
-      }
-      if (!$formState.valid) {
-        //toast_error('Some fields were missing or incorrect');
-        return;
-      }
-  
-      onSubmit();
-    };
-  
-    run(() => {
-      if (formState) {
-        validate();
-        $formState?.fields;
-      }
-    });
-  </script>
-  
-  <form onsubmit={preventDefault(submitHandler)} novalidate>
-    {@render children?.()}
-  </form>
-  
-  <style></style>
-  
+<form {action} {id} onsubmit={handleSubmit}>
+  {@render children()}
+</form>
