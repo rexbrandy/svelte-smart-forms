@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
-  import { setFormContext } from "./stores/formContext.svelte";
-	import type { FormState } from "./stores/formContext.svelte";
+  import { setFormContext } from "./formContext.svelte";
+	import type { FormState } from "./formContext.svelte";
 
   let { 
     formState,

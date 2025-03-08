@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { onMount, type Snippet } from "svelte";
-  import type { ValidationRule, FieldState } from "./stores/interfaces";
-	import { getFormContext } from "./stores/formContext.svelte";
-  import type { FormState } from "./stores/formContext.svelte";
+  import type { ValidationRule, FieldState } from "./interfaces";
+	import { getFormContext } from "./formContext.svelte";
+  import type { FormState } from "./formContext.svelte";
+	import FieldError from "./FieldError.svelte";
   
   let {
     label = '',
@@ -15,7 +16,8 @@
     onBlur = () => {},
     validationRules = [],
     showValidation = false,
-    input
+    input,
+    formState: propsFormState
   } : {
     label?: string;
     value: any;
@@ -28,9 +30,12 @@
     validationRules: ValidationRule[];
     showValidation: boolean;
     input: Snippet<[{ handleBlur: () => void }]>;
+    formState?: FormState;
   } = $props();
 
-  const formState: FormState = getFormContext();
+    // Allow formState override
+  const contextFormState = getFormContext();
+  const formState = propsFormState || contextFormState
 
   // Set up field state
   let fieldState = $state<FieldState>({
@@ -86,5 +91,8 @@
 
   {@render input({ handleBlur })}
 
-  <!-- Todo FieldErrors-->
+  <!-- Todo FieldErrors--> 
+   {#if showValidation}
+    <FieldError field={name}/>
+   {/if}
 </div>
