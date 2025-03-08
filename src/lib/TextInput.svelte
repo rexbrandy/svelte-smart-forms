@@ -1,6 +1,6 @@
 <script lang="ts">
   import BaseInput from "./BaseInput.svelte";
-  import type { ValidationRule } from "./stores/interfaces";
+  import type { ValidationRule } from "./interfaces";
 
   let {
     name,
